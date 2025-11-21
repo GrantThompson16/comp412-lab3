@@ -1,0 +1,88 @@
+Lab 2 Autotimer: using Scalability SLOCs blocks
+
+Gathering operation counts with lab2 simulator.
+
+=======================================================================
+Testing submission: BadReadme.tar
+
+	Problem determining NAME and/or NETID
+	Deduct -20% of conformance points
+
+Name: badRM, NetID: BadReadme.tar	Date From Files: 2024-02-05
+
+--- building executable ---
+Cleaned directory
+Built allocator
+--- built executable; should be ready to run ---
+
+Testing Scalability:	(minimum time of 5 runs)
+
+	T1k.i:  	0.0049 seconds
+	T2k.i:  	0.0058 seconds
+	T4k.i:  	0.0074 seconds
+	T8k.i:  	0.0104 seconds
+	T16k.i:  	0.0166 seconds
+	T32k.i:  	0.0290 seconds
+	T64k.i:  	0.0534 seconds
+	T128k.i:  	0.1047 seconds
+ 
+Scaling score is 	10.0
+Efficiency score is 	10.0	( c )
+
+finished timing run on submission BadReadme.tar
+=======================================================================
+Testing submission: comp412.tar
+Name: Comp 412, NetID: comp412	Date From Files: 2024-02-11
+
+--- building executable ---
+Cleaned directory
+Built allocator
+--- built executable; should be ready to run ---
+
+Testing Scalability:	(minimum time of 5 runs)
+
+	T1k.i:  	0.0049 seconds
+	T2k.i:  	0.0057 seconds
+	T4k.i:  	0.0072 seconds
+	T8k.i:  	0.0104 seconds
+	T16k.i:  	0.0163 seconds
+	T32k.i:  	0.0287 seconds
+	T64k.i:  	0.0533 seconds
+	T128k.i:  	0.1024 seconds
+ 
+Scaling score is 	10.0
+Efficiency score is 	10.0	( c )
+
+finished timing run on submission comp412.tar
+=======================================================================
+Testing submission: gwt5035.tar
+
+***	Tar archive has more than 5 levels of subdirectories.
+	May indicate a poorly constructed archive.
+Name: Grant Thompson, NetID: gwt5035	Date From Files: 2025-10-21
+
+--- building executable ---
+rm -f 412alloc
+GOFLAGS= GOTOOLCHAIN=local go build -trimpath -ldflags="-s -w" -o 412alloc ./cmd/412alloc
+chmod +x 412alloc
+--- built executable; should be ready to run ---
+
+Testing Scalability:	(minimum time of 5 runs)
+
+	T1k.i:  	0.0080 seconds
+	T2k.i:  	0.0118 seconds
+	T4k.i:  	0.0201 seconds
+	T8k.i:  	0.0389 seconds
+	T16k.i:  	0.0743 seconds
+	T32k.i:  	0.1458 seconds
+	T64k.i:  	0.2882 seconds
+	T128k.i:  	0.5700 seconds
+ 
+Scaling score is 	10.0
+Efficiency score is 	10.0	( unknown )
+
+finished timing run on submission gwt5035.tar
+=======================================================================
+
+Timing run complete.
+

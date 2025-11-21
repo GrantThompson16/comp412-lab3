@@ -1,0 +1,6 @@
+Comp 412, Lab 2, Results for block 'report4.i'
+Import into Excel with tab separators
+NetID	Name	3	4	5	6	8	12	16
+BadReadme.tar	badRM	168	161	155	149	137	114	90
+comp412	Comp 412	168	161	155	149	137	114	90
+gwt5035	Grant Thompson	167	161	155	149	137	110	86

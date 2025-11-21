@@ -1,0 +1,7 @@
+COMP 412, Lab 2 Autograder, Points by NetID
+Import into Excel with tab separators
+
+Netid	Name	Conforms	Correctness	Effectiveness	Date	Days Late
+BadReadme.tar	badRM	-10	30.0	20.0	2024-02-05	-2
+comp412	Comp 412	0	30.0	20.0	2024-02-11	-2
+gwt5035	Grant Thompson	0	30.0	18.79	2025-11-09	5
