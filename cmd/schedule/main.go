@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 
-	"lab2/internal/frontend"
-	"lab2/internal/rename"
-	"lab2/internal/schedule"
+	"lab3/internal/frontend"
+	"lab3/internal/rename"
+	"lab3/internal/schedule"
 )
 
 func main() {
@@ -96,7 +95,7 @@ func runSchedule(path string) error {
 	// Rename before scheduling
 	rename.RenameVirtualRegisters(irList)
 
-	err := schedule.Schedule(irList, os.Stdout)
+	err = schedule.Schedule(irList, os.Stdout)
 	if err != nil {
 		return fmt.Errorf("ERROR: scheduling failed: %w", err)
 	}

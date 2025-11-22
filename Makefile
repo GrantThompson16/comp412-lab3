@@ -1,5 +1,5 @@
-APP      := 412alloc
-PKG_MAIN := ./cmd/412alloc
+APP      := schedule
+PKG_MAIN := ./cmd/schedule
 
 .PHONY: all build clean
 

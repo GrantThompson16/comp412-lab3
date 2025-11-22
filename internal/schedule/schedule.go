@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"lab2/internal/frontend/ir"
+	"lab3/internal/frontend/ir"
 )
 
 func Schedule(irList *ir.IR, w io.Writer) error {
@@ -14,6 +14,13 @@ func Schedule(irList *ir.IR, w io.Writer) error {
 	if w == nil {
 		return fmt.Errorf("ERROR: nil writer passed to scheduler")
 	}
+
+	// build scheduler model
+	instructions := buildInstructions(irList)
+
+	maxVR := irList.MaxVR()
+
+	_ = buildDepGraph(instructions, maxVR)
 
 	irList.Fprint(w)
 	return nil

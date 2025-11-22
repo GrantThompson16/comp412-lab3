@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"io"
 
-	"lab2/internal/frontend/ir"
-	"lab2/internal/frontend/scanner"
-	"lab2/internal/frontend/token"
+	"lab3/internal/frontend/ir"
+	"lab3/internal/frontend/scanner"
+	"lab3/internal/frontend/token"
 )
 
 type Output struct {

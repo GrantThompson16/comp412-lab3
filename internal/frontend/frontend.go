@@ -5,9 +5,9 @@ import (
 	"io"
 	"os"
 
-	"lab2/internal/frontend/ir"
-	"lab2/internal/frontend/parser"
-	"lab2/internal/frontend/scanner"
+	"lab3/internal/frontend/ir"
+	"lab3/internal/frontend/parser"
+	"lab3/internal/frontend/scanner"
 )
 
 // This method turns an ILOC stream into an IR

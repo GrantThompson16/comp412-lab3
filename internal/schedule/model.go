@@ -1,8 +1,8 @@
 package schedule
 
 import (
-	"lab2/internal/frontend/ir"
-	"lab2/internal/frontend/token"
+	"lab3/internal/frontend/ir"
+	"lab3/internal/frontend/token"
 )
 
 /**
@@ -59,9 +59,9 @@ func buildInstructions(irList *ir.IR) []*Instr{
 			Index: index,
 			Node: node,
 			Opcode: node.Opcode,
-			Latency: latencyForOpcode(node.Opcode)
+			Latency: latencyForOpcode(node.Opcode),
 			SrcVR: make([]int, 0, 2),
-			DestVR: ir.InvalidReg
+			DestVR: ir.InvalidReg,
 		}
 
 		// Uses

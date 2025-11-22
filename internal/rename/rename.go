@@ -1,7 +1,7 @@
 package rename
 
 import (
-	"lab2/internal/frontend/ir"
+	"lab3/internal/frontend/ir"
 )
 
 func RenameVirtualRegisters(irList *ir.IR) {

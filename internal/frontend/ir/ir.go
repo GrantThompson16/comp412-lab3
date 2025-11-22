@@ -5,7 +5,7 @@ import (
 	"io"
 	"math"
 
-	"lab2/internal/frontend/token"
+	"lab3/internal/frontend/token"
 )
 
 const (

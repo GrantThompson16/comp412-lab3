@@ -2,7 +2,7 @@ package scanner
 
 import (
 	"bufio"
-	"lab2/internal/frontend/token"
+	"lab3/internal/frontend/token"
 	"fmt"
 
 	//maybe?
