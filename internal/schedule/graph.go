@@ -31,6 +31,7 @@ type DepNode struct {
 	Instr *Instr
 	Out []*DepEdge
 	In []*DepEdge
+	Priority int // cumputed priority for scheduling
 }
 
 type DepGraph struct {
@@ -152,6 +153,53 @@ func buildDepGraph(instructions []*Instr, maxVR int) *DepGraph {
 }
 
 
+// Computed a priority for each node in the dependence graph
+// height[i] = latency weighted length of the longest path from node i to any root
+// desc[i] = num nodes reachable betweent he node and all of the roots 
+// priority[i] = 10 * height[i]  + desc[i]
+func (g *DepGraph) ComputePriorities() []int {
+	n := len(g.Nodes)
+	if n == 0 {
+		return nil
+	}
+
+	height := make([]int, n)
+	desc := make([]int, n)
+	priority := make([]int, n)
+
+	for i := 0; i < n; i++ {
+		node := g.Nodes[i]
+		latency := node.Instr.Latency
+
+		if len(node.Out) == 0 {
+			// root
+			height[i] = latency
+			desc[i] = 0
+		} else {
+			maxSuccessorHeight := 0
+			totalDescendants := 0
+
+			for _, e := range node.Out {
+				succIdx := e.To
+
+				if height[succIdx] > maxSuccessorHeight {
+					maxSuccessorHeight = height[succIdx]
+				}
+
+				totalDescendants += 1 + desc[succIdx]
+			}
+
+			height[i] = latency + maxSuccessorHeight
+			desc[i] = totalDescendants
+		}
+	}
+
+	for i := 0; i < n; i++ {
+		priority[i] = 10 * height[i] + desc[i]
+		g.Nodes[i].Priority = priority[i]
+	}
+	return priority
+}
 
 
 // Dbeug
@@ -164,12 +212,12 @@ func (g *DepGraph) FprintDOT(w io.Writer) error {
     fmt.Fprintln(w, `  node [shape=box];`)
 
     // nodes
-    for i, n := range g.Nodes {
-        inst := n.Instr
-        label := fmt.Sprintf("%d: %s (lat=%d)", i, inst.Opcode.String(), inst.Latency)
-        fmt.Fprintf(w, "  %d [label=\"%s\"];\n", i, label)
-    }
-
+	for i, n := range g.Nodes {
+		inst := n.Instr
+		label := fmt.Sprintf("%d: %s (lat=%d,prio=%d)",
+			i, inst.Opcode.String(), inst.Latency, n.Priority)
+		fmt.Fprintf(w, "  %d [label=\"%s\"];\n", i, label)
+	}
     // edges
     for _, e := range g.Edges {
         kind := ""

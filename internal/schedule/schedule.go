@@ -30,5 +30,6 @@ func DumpDG(irList *ir.IR, w io.Writer) error {
     instrs := buildInstructions(irList)
     maxVR := irList.MaxVR()
     g := buildDepGraph(instrs, maxVR)
+	g.ComputePriorities()
     return g.FprintDOT(w)
 }
