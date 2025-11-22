@@ -15,6 +15,7 @@ func main() {
 	// flags for -h and -x
 	helpFlag := flag.Bool("h", false, "prints usage and exits")
 	renamePrintFlag := flag.String("x", "", "scans, parses, renames, prints renamed IR (debug)")
+	dgFlag := flag.String("dg", "", "dump dependence graph for <iloc file> (debug)")
 	flag.Parse()
 
 	if *helpFlag {
@@ -26,6 +27,15 @@ func main() {
 	if *renamePrintFlag != "" {
 		err := runRename(*renamePrintFlag)
 		if err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			os.Exit(1)
+		}
+		return
+	}
+
+	// Debug mode: schedule -dg <file>
+	if *dgFlag != "" {
+		if err := runDumpDG(*dgFlag); err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)
 		}
@@ -98,6 +108,20 @@ func runSchedule(path string) error {
 	err = schedule.Schedule(irList, os.Stdout)
 	if err != nil {
 		return fmt.Errorf("ERROR: scheduling failed: %w", err)
+	}
+	return nil
+}
+
+func runDumpDG(path string) error {
+	irList, _, err := frontend.ParseFile(path)
+	if err != nil {
+		return fmt.Errorf("ERROR: parse failed for %q: %w", path, err)
+	}
+
+	rename.RenameVirtualRegisters(irList)
+
+	if err := schedule.DumpDG(irList, os.Stdout); err != nil {
+		return fmt.Errorf("ERROR: dumping dependence graph failed: %w", err)
 	}
 	return nil
 }

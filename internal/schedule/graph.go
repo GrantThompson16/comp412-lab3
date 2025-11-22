@@ -1,5 +1,11 @@
 package schedule
 
+import (
+    "fmt"
+    "io"
+)
+
+
 // type to distinguish the diff dependency types for edges
 type EdgeKind int
 
@@ -143,4 +149,46 @@ func buildDepGraph(instructions []*Instr, maxVR int) *DepGraph {
 		}
 	}
 	return g
+}
+
+
+
+
+// Dbeug
+func (g *DepGraph) FprintDOT(w io.Writer) error {
+    if g == nil || w == nil {
+        return nil
+    }
+
+    fmt.Fprintln(w, "digraph dg {")
+    fmt.Fprintln(w, `  node [shape=box];`)
+
+    // nodes
+    for i, n := range g.Nodes {
+        inst := n.Instr
+        label := fmt.Sprintf("%d: %s (lat=%d)", i, inst.Opcode.String(), inst.Latency)
+        fmt.Fprintf(w, "  %d [label=\"%s\"];\n", i, label)
+    }
+
+    // edges
+    for _, e := range g.Edges {
+        kind := ""
+        switch e.Kind {
+        case EdgeKindData:
+            kind = "data"
+        case EdgeKindConflict:
+            kind = "conf"
+        case EdgeKindSerial:
+            kind = "serial"
+        }
+        extra := ""
+        if e.Kind == EdgeKindData {
+            extra = fmt.Sprintf(" vr=%d", e.VR)
+        }
+        fmt.Fprintf(w, "  %d -> %d [label=\"%s lat=%d%s\"];\n",
+            e.From, e.To, kind, e.Latency, extra)
+    }
+
+    fmt.Fprintln(w, "}")
+    return nil
 }

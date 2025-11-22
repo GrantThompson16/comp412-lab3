@@ -25,3 +25,10 @@ func Schedule(irList *ir.IR, w io.Writer) error {
 	irList.Fprint(w)
 	return nil
 }
+
+func DumpDG(irList *ir.IR, w io.Writer) error {
+    instrs := buildInstructions(irList)
+    maxVR := irList.MaxVR()
+    g := buildDepGraph(instrs, maxVR)
+    return g.FprintDOT(w)
+}
