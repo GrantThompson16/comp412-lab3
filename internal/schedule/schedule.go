@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"container/heap"
 
 	"lab3/internal/frontend/ir"
 	"lab3/internal/frontend/token"
