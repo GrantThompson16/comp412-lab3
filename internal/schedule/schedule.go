@@ -3,7 +3,6 @@ package schedule
 import (
 	"fmt"
 	"io"
-	"sort"
 	"container/heap"
 
 	"lab3/internal/frontend/ir"
@@ -59,6 +58,78 @@ func Schedule(irList *ir.IR, w io.Writer) error {
 	return nil
 }
 
+// ===== Ready set (max heap by priority) ====
+type readyPQ struct {
+	g *DepGraph
+	items []int //instruction indicies
+}
+
+func (pq readyPQ) Len() int {
+	return len(pq.items)
+}
+
+func (pq readyPQ) Less(i, j int) bool {
+    ia := pq.items[i]
+    ib := pq.items[j]
+    pa := pq.g.Nodes[ia].Priority
+    pb := pq.g.Nodes[ib].Priority
+    if pa != pb {
+        // higher priority should come first
+        return pa > pb
+    }
+    return ia < ib
+}
+
+func (pq readyPQ) Swap(i, j int) { 
+	pq.items[i], pq.items[j] = pq.items[j], pq.items[i] 
+}
+
+func (pq *readyPQ) Push(x any) {
+    pq.items = append(pq.items, x.(int))
+}
+
+func (pq *readyPQ) Pop() any {
+    n := len(pq.items)
+    x := pq.items[n-1]
+    pq.items = pq.items[:n-1]
+    return x
+}
+
+// === pending set (min heap by ready cycle)
+type pendingInstr struct {
+	readyCycle int
+	idx int
+}
+
+type pendingPQ []pendingInstr
+
+func (pq pendingPQ) Len() int {
+	return len(pq)
+}
+
+func (pq pendingPQ) Less(i, j int) bool {
+    if pq[i].readyCycle != pq[j].readyCycle {
+        return pq[i].readyCycle < pq[j].readyCycle
+    }
+    return pq[i].idx < pq[j].idx
+}
+
+func (pq pendingPQ) Swap(i,j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+}
+
+func (pq *pendingPQ) Push(x any) {
+    *pq = append(*pq, x.(pendingInstr))
+}
+
+func (pq *pendingPQ) Pop() any {
+    old := *pq
+    n := len(old)
+    x := old[n-1]
+    *pq = old[:n-1]
+    return x
+}
+
 // decides which functiopnal unit (0 or 1) this instruction can run this cycle
 // given current FU availability and whether an output alr been issued this cuycle.
 // Returns -1 if it cannot be scheduled this cycle
@@ -108,125 +179,117 @@ func scheduleBlock(g *DepGraph) [][]*Instr {
 		return nil
 	}
 
-	unscheduledPreds := make([]int, n) // num predecessors (earlier depoendencies) remain
+
+	predsRemaining := make([]int, n) // num unscheduled preds for instruction i
 	readyCycle := make([]int, n) // earliest cycle when op can issue
-	scheduled := make([]bool, n) // has op been scheduled?
-	remaining := n
 
 	for i, node := range g.Nodes {
-		unscheduledPreds[i] = len(node.Out)
+		predsRemaining[i] = len(node.Out)
+		readyCycle[i] = 0
 	}
 
+
+	// Ready PQ, ordered by priortity, max heap
+	rpq := &readyPQ{
+		g: g,
+	}
+	heap.Init(rpq)
+
+	//pending PQ ordered by readyCycle (min heap)
+	pending := &pendingPQ{}
+	heap.Init(pending)
+
+	// initially, any node w 0 preds becomes ready at cycle 0
+	for i :=0; i < n; i++ {
+		if predsRemaining[i] == 0 {
+			heap.Push(rpq, i)
+		}
+	}
+	
+	remaining := n
 	var schedule [][]*Instr
 	cycle := 0
 
 	for remaining > 0 {
-		// collect all currently ready ops at this cycle
-		var ready []int
-		for i := 0; i < n; i++ {
-			if scheduled[i] {
-				continue
-			}
-			if unscheduledPreds[i] == 0 && readyCycle[i] <= cycle {
-				ready = append(ready, i)
-			}
+		for pending.Len() > 0 && (*pending)[0].readyCycle <= cycle {
+			item := heap.Pop(pending).(pendingInstr)
+			heap.Push(rpq, item.idx)
 		}
 
 		fu0Free, fu1Free := true, true
 		outputUsed := false
 		var issued []*Instr
 
-		if len(ready) > 0 {
-			// sort ready by priority high to low, then index low to high
-			sort.SliceStable(ready, func(a,b int) bool {
-				ia := ready[a]
-				ib := ready[b]
-				pa := g.Nodes[ia].Priority
-				pb := g.Nodes[ib].Priority
-				if pa != pb {
-					return pa > pb
+		for picks := 0; picks < 2 && rpq.Len() > 0; picks++ {
+			chosenIdx := -1
+			chosenFU := -1
+
+			var skipped []int
+
+			for rpq.Len() > 0 {
+				idx := heap.Pop(rpq).(int)
+				inst := g.Instructions[idx]
+				fu := chooseFU(inst, fu0Free, fu1Free, outputUsed)
+				if fu < 0 {
+					skipped = append(skipped, idx)
+					continue
 				}
-				return ia < ib
-			})
+				chosenIdx = idx
+				chosenFU = fu
+				break
+			}
 
-			used := make([]bool, len(ready))
+			for _, idx := range skipped {
+				heap.Push(rpq, idx)
+			}
 
-			// try to pick up 2 ops for this cycle
-			for picks := 0; picks < 2; picks++ {
-				bestIdx := -1
-				bestFU := -1
+			if chosenIdx == -1 {
+				break
+			}
 
-				for pos, idx := range ready {
-					if used[pos] {
-						continue
-					}
-					inst := g.Instructions[idx]
-					fu := chooseFU(inst, fu0Free, fu1Free, outputUsed)
-					if fu < 0 {
-						continue
-					}
+			inst := g.Instructions[chosenIdx]
+			issued = append(issued, inst)
+			remaining--
 
-					bestIdx = idx
-					bestFU = fu
-					used[pos] = true
-					break
-				
-				}
-				if bestIdx == -1 {
-					//no more ops fit this cycle 
-					break
-				}
+			if chosenFU == 0 {
+				fu0Free = false
+			} else {
+				fu1Free = false
+			}
+			if inst.IsOutput {
+				outputUsed = true
+			}
 
-				inst := g.Instructions[bestIdx]
-				issued = append(issued, inst)
-				scheduled[bestIdx] = true
-				remaining--
+			node := g.Nodes[chosenIdx]
+			for _, e := range node.In {
+				succ := e.From 
 
-				// consume chosen fu and output slot if needed
-				if bestFU == 0 {
-					fu0Free = false
-				} else if bestFU == 1 {
-					fu1Free = false
-				}
-				if inst.IsOutput {
-					outputUsed = true
+				predsRemaining[succ]--
+				if predsRemaining[succ] < 0 {
+					predsRemaining[succ] = 0
 				}
 
-				// update successors (later ops) that depend on this op
-				node := g.Nodes[bestIdx]
-				for _, e := range node.In {
-					succ := e.From
-					if scheduled[succ] {
-						continue
-					}
+				t := cycle + e.Latency
+				if t > readyCycle[succ] {
+					readyCycle[succ] = t
+				}
 
-					unscheduledPreds[succ]--
-					if unscheduledPreds[succ] < 0 {
-						unscheduledPreds[succ] = 0
-					}
-
-					rc := cycle + e.Latency
-					if rc > readyCycle[succ] {
-						readyCycle[succ] = rc
+				if predsRemaining[succ] == 0 {
+					rt := readyCycle[succ]
+					if rt <= cycle {
+						heap.Push(rpq, succ)
+					} else {
+						heap.Push(pending, pendingInstr{readyCycle: rt, idx: succ})
 					}
 				}
 			}
 		}
-
 		schedule = append(schedule, issued)
 		cycle++
 	}
-	return schedule
 
+    return schedule
 }
-
-
-
-
-
-
-
-
 
 // ===== Printing Helpers ===========
 func formatRegVR(op ir.Operand) string {
