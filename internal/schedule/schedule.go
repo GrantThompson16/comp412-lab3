@@ -1,9 +1,9 @@
 package schedule
 
 import (
+	"container/heap"
 	"fmt"
 	"io"
-	"container/heap"
 
 	"lab3/internal/frontend/ir"
 	"lab3/internal/frontend/token"
@@ -60,7 +60,7 @@ func Schedule(irList *ir.IR, w io.Writer) error {
 
 // ===== Ready set (max heap by priority) ====
 type readyPQ struct {
-	g *DepGraph
+	g     *DepGraph
 	items []int //instruction indicies
 }
 
@@ -69,36 +69,36 @@ func (pq readyPQ) Len() int {
 }
 
 func (pq readyPQ) Less(i, j int) bool {
-    ia := pq.items[i]
-    ib := pq.items[j]
-    pa := pq.g.Nodes[ia].Priority
-    pb := pq.g.Nodes[ib].Priority
-    if pa != pb {
-        // higher priority should come first
-        return pa > pb
-    }
-    return ia < ib
+	ia := pq.items[i]
+	ib := pq.items[j]
+	pa := pq.g.Nodes[ia].Priority
+	pb := pq.g.Nodes[ib].Priority
+	if pa != pb {
+		// higher priority should come first
+		return pa > pb
+	}
+	return ia < ib
 }
 
-func (pq readyPQ) Swap(i, j int) { 
-	pq.items[i], pq.items[j] = pq.items[j], pq.items[i] 
+func (pq readyPQ) Swap(i, j int) {
+	pq.items[i], pq.items[j] = pq.items[j], pq.items[i]
 }
 
 func (pq *readyPQ) Push(x any) {
-    pq.items = append(pq.items, x.(int))
+	pq.items = append(pq.items, x.(int))
 }
 
 func (pq *readyPQ) Pop() any {
-    n := len(pq.items)
-    x := pq.items[n-1]
-    pq.items = pq.items[:n-1]
-    return x
+	n := len(pq.items)
+	x := pq.items[n-1]
+	pq.items = pq.items[:n-1]
+	return x
 }
 
 // === pending set (min heap by ready cycle)
 type pendingInstr struct {
 	readyCycle int
-	idx int
+	idx        int
 }
 
 type pendingPQ []pendingInstr
@@ -108,26 +108,26 @@ func (pq pendingPQ) Len() int {
 }
 
 func (pq pendingPQ) Less(i, j int) bool {
-    if pq[i].readyCycle != pq[j].readyCycle {
-        return pq[i].readyCycle < pq[j].readyCycle
-    }
-    return pq[i].idx < pq[j].idx
+	if pq[i].readyCycle != pq[j].readyCycle {
+		return pq[i].readyCycle < pq[j].readyCycle
+	}
+	return pq[i].idx < pq[j].idx
 }
 
-func (pq pendingPQ) Swap(i,j int) {
+func (pq pendingPQ) Swap(i, j int) {
 	pq[i], pq[j] = pq[j], pq[i]
 }
 
 func (pq *pendingPQ) Push(x any) {
-    *pq = append(*pq, x.(pendingInstr))
+	*pq = append(*pq, x.(pendingInstr))
 }
 
 func (pq *pendingPQ) Pop() any {
-    old := *pq
-    n := len(old)
-    x := old[n-1]
-    *pq = old[:n-1]
-    return x
+	old := *pq
+	n := len(old)
+	x := old[n-1]
+	*pq = old[:n-1]
+	return x
 }
 
 // decides which functiopnal unit (0 or 1) this instruction can run this cycle
@@ -144,12 +144,12 @@ func chooseFU(inst *Instr, fu0, fu1, outputUsed bool) int {
 		return -1
 	case token.OP_MULT:
 		//mult must run on f1
-		if fu1{
+		if fu1 {
 			return 1
 		}
 		return -1
 	case token.OP_OUTPUT:
-		if outputUsed{
+		if outputUsed {
 			return -1
 		}
 		if fu1 {
@@ -179,15 +179,13 @@ func scheduleBlock(g *DepGraph) [][]*Instr {
 		return nil
 	}
 
-
 	predsRemaining := make([]int, n) // num unscheduled preds for instruction i
-	readyCycle := make([]int, n) // earliest cycle when op can issue
+	readyCycle := make([]int, n)     // earliest cycle when op can issue
 
 	for i, node := range g.Nodes {
 		predsRemaining[i] = len(node.Out)
 		readyCycle[i] = 0
 	}
-
 
 	// Ready PQ, ordered by priortity, max heap
 	rpq := &readyPQ{
@@ -200,12 +198,12 @@ func scheduleBlock(g *DepGraph) [][]*Instr {
 	heap.Init(pending)
 
 	// initially, any node w 0 preds becomes ready at cycle 0
-	for i :=0; i < n; i++ {
+	for i := 0; i < n; i++ {
 		if predsRemaining[i] == 0 {
 			heap.Push(rpq, i)
 		}
 	}
-	
+
 	remaining := n
 	var schedule [][]*Instr
 	cycle := 0
@@ -262,7 +260,7 @@ func scheduleBlock(g *DepGraph) [][]*Instr {
 
 			node := g.Nodes[chosenIdx]
 			for _, e := range node.In {
-				succ := e.From 
+				succ := e.From
 
 				predsRemaining[succ]--
 				if predsRemaining[succ] < 0 {
@@ -288,7 +286,7 @@ func scheduleBlock(g *DepGraph) [][]*Instr {
 		cycle++
 	}
 
-    return schedule
+	return schedule
 }
 
 // ===== Printing Helpers ===========
@@ -338,9 +336,9 @@ func formatOp(node *ir.IRNode) (string, error) {
 
 // ===== Debug Helper ==========
 func DumpDG(irList *ir.IR, w io.Writer) error {
-    instrs := buildInstructions(irList)
-    maxVR := irList.MaxVR()
-    g := buildDepGraph(instrs, maxVR)
+	instrs := buildInstructions(irList)
+	maxVR := irList.MaxVR()
+	g := buildDepGraph(instrs, maxVR)
 	g.ComputePriorities()
-    return g.FprintDOT(w)
+	return g.FprintDOT(w)
 }

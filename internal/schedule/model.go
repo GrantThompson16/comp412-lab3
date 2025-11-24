@@ -6,26 +6,24 @@ import (
 )
 
 /**
-========= Model.go provides a way to build a more simple version of the IR, 
+========= Model.go provides a way to build a more simple version of the IR,
 allowing cheap indexing as it is a slice and not linked list ===========
 **/
 
-
-
 // Instr represents one schedulable instruction
 type Instr struct {
-	Index int // index in instr slice
-	Node *ir.IRNode // uderlying ir node
-	Opcode token.Operation // type of operation
-	Latency int //cycles
+	Index   int             // index in instr slice
+	Node    *ir.IRNode      // uderlying ir node
+	Opcode  token.Operation // type of operation
+	Latency int             //cycles
 
 	// Register uses and defs in terms of VRs from the renamer
-	SrcVR []int // slice of source VRs (0 ,1 or 2)
-	DestVR int // -1 if no dest VR
+	SrcVR  []int // slice of source VRs (0 ,1 or 2)
+	DestVR int   // -1 if no dest VR
 
 	// Memory / output classification
-	IsLoad bool
-	IsStore bool
+	IsLoad   bool
+	IsStore  bool
 	IsOutput bool
 }
 
@@ -41,7 +39,7 @@ func latencyForOpcode(op token.Operation) int {
 	}
 }
 
-func buildInstructions(irList *ir.IR) []*Instr{
+func buildInstructions(irList *ir.IR) []*Instr {
 	if irList == nil || irList.Count == 0 {
 		return nil
 	}
@@ -51,17 +49,17 @@ func buildInstructions(irList *ir.IR) []*Instr{
 
 	for node := irList.Head; node != nil; node = node.Next {
 		// skip inputs nops, they have no effect
-		if node.Opcode == token.OP_NOP{
+		if node.Opcode == token.OP_NOP {
 			continue
 		}
 
 		inst := &Instr{
-			Index: index,
-			Node: node,
-			Opcode: node.Opcode,
+			Index:   index,
+			Node:    node,
+			Opcode:  node.Opcode,
 			Latency: latencyForOpcode(node.Opcode),
-			SrcVR: make([]int, 0, 2),
-			DestVR: ir.InvalidReg,
+			SrcVR:   make([]int, 0, 2),
+			DestVR:  ir.InvalidReg,
 		}
 
 		// Uses

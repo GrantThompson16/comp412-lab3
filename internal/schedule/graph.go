@@ -1,10 +1,9 @@
 package schedule
 
 import (
-    "fmt"
-    "io"
+	"fmt"
+	"io"
 )
-
 
 // type to distinguish the diff dependency types for edges
 type EdgeKind int
@@ -15,45 +14,44 @@ const (
 	EdgeKindSerial
 )
 
-
 // Directed edge in the dependence graph, edges run from USE to the DEF / constraining operation
 type DepEdge struct {
-	From int // source instr index (use)
-	To int // sink instr index (def)
-	Latency int // latency of constrAINING OP
-	Kind EdgeKind //kind of dependence
-	VR int // vr carried on data edges, -1 for non data edges
+	From    int      // source instr index (use)
+	To      int      // sink instr index (def)
+	Latency int      // latency of constrAINING OP
+	Kind    EdgeKind //kind of dependence
+	VR      int      // vr carried on data edges, -1 for non data edges
 }
 
 // DepNode holds adjacency lists for an instruction
 type DepNode struct {
-	Index int
-	Instr *Instr
-	Out []*DepEdge
-	In []*DepEdge
+	Index    int
+	Instr    *Instr
+	Out      []*DepEdge
+	In       []*DepEdge
 	Priority int // cumputed priority for scheduling
 }
 
 type DepGraph struct {
 	Instructions []*Instr
-	Nodes []*DepNode
-	Edges []*DepEdge
+	Nodes        []*DepNode
+	Edges        []*DepEdge
 }
 
 // Dependency graph constructor
 func newDepGraph(instructions []*Instr) *DepGraph {
 	g := &DepGraph{
 		Instructions: instructions,
-		Nodes: make([]*DepNode, len(instructions)),
-		Edges: make([]*DepEdge, 0),
+		Nodes:        make([]*DepNode, len(instructions)),
+		Edges:        make([]*DepEdge, 0),
 	}
 
 	for idx, inst := range instructions {
 		g.Nodes[idx] = &DepNode{
 			Index: idx,
 			Instr: inst,
-			Out: nil,
-			In: nil,
+			Out:   nil,
+			In:    nil,
 		}
 	}
 	return g
@@ -61,16 +59,16 @@ func newDepGraph(instructions []*Instr) *DepGraph {
 
 // inserts a directed edge into the graph g
 func (g *DepGraph) addEdge(from, to, latency int, kind EdgeKind, vr int) {
-	if from == to || from < 0 || to < 0 || from >= len(g.Nodes) || to >= len(g.Nodes){
+	if from == to || from < 0 || to < 0 || from >= len(g.Nodes) || to >= len(g.Nodes) {
 		return
 	}
 
 	e := &DepEdge{
-		From: from,
-		To: to,
+		From:    from,
+		To:      to,
 		Latency: latency,
-		Kind: kind,
-		VR: vr,
+		Kind:    kind,
+		VR:      vr,
 	}
 	g.Edges = append(g.Edges, e)
 	g.Nodes[from].Out = append(g.Nodes[from].Out, e)
@@ -79,7 +77,7 @@ func (g *DepGraph) addEdge(from, to, latency int, kind EdgeKind, vr int) {
 
 // Constructs the dependence graph
 // 1. For each VR use, add a data edge from use to its definition
-// 2. for memort ops (load store output) add CONFLICT and SERIAL edges 
+// 2. for memort ops (load store output) add CONFLICT and SERIAL edges
 // edges always run from use to the earlier op (def)
 func buildDepGraph(instructions []*Instr, maxVR int) *DepGraph {
 	g := newDepGraph(instructions)
@@ -152,10 +150,9 @@ func buildDepGraph(instructions []*Instr, maxVR int) *DepGraph {
 	return g
 }
 
-
 // Computed a priority for each node in the dependence graph
 // height[i] = latency weighted length of the longest path from node i to any root
-// desc[i] = num nodes reachable betweent he node and all of the roots 
+// desc[i] = num nodes reachable betweent he node and all of the roots
 // priority[i] = 10 * height[i]  + desc[i]
 func (g *DepGraph) ComputePriorities() []int {
 	n := len(g.Nodes)
@@ -195,48 +192,47 @@ func (g *DepGraph) ComputePriorities() []int {
 	}
 
 	for i := 0; i < n; i++ {
-		priority[i] = 10 * height[i] + desc[i]
+		priority[i] = 10*height[i] + desc[i]
 		g.Nodes[i].Priority = priority[i]
 	}
 	return priority
 }
 
-
 // Dbeug
 func (g *DepGraph) FprintDOT(w io.Writer) error {
-    if g == nil || w == nil {
-        return nil
-    }
+	if g == nil || w == nil {
+		return nil
+	}
 
-    fmt.Fprintln(w, "digraph dg {")
-    fmt.Fprintln(w, `  node [shape=box];`)
+	fmt.Fprintln(w, "digraph dg {")
+	fmt.Fprintln(w, `  node [shape=box];`)
 
-    // nodes
+	// nodes
 	for i, n := range g.Nodes {
 		inst := n.Instr
 		label := fmt.Sprintf("%d: %s (lat=%d,prio=%d)",
 			i, inst.Opcode.String(), inst.Latency, n.Priority)
 		fmt.Fprintf(w, "  %d [label=\"%s\"];\n", i, label)
 	}
-    // edges
-    for _, e := range g.Edges {
-        kind := ""
-        switch e.Kind {
-        case EdgeKindData:
-            kind = "data"
-        case EdgeKindConflict:
-            kind = "conf"
-        case EdgeKindSerial:
-            kind = "serial"
-        }
-        extra := ""
-        if e.Kind == EdgeKindData {
-            extra = fmt.Sprintf(" vr=%d", e.VR)
-        }
-        fmt.Fprintf(w, "  %d -> %d [label=\"%s lat=%d%s\"];\n",
-            e.From, e.To, kind, e.Latency, extra)
-    }
+	// edges
+	for _, e := range g.Edges {
+		kind := ""
+		switch e.Kind {
+		case EdgeKindData:
+			kind = "data"
+		case EdgeKindConflict:
+			kind = "conf"
+		case EdgeKindSerial:
+			kind = "serial"
+		}
+		extra := ""
+		if e.Kind == EdgeKindData {
+			extra = fmt.Sprintf(" vr=%d", e.VR)
+		}
+		fmt.Fprintf(w, "  %d -> %d [label=\"%s lat=%d%s\"];\n",
+			e.From, e.To, kind, e.Latency, extra)
+	}
 
-    fmt.Fprintln(w, "}")
-    return nil
+	fmt.Fprintln(w, "}")
+	return nil
 }
