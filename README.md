@@ -14,9 +14,8 @@ This will produce a top level executable named "412alloc"
 Usage:
 ======
 
-    ./412alloc -h
-    ./412alloc -x <iloc file>
-    ./412alloc k <iloc file>    # 3 <= k <= 64
+    ./schedule -h
+    .schedule <iloc file>
 
 
 
