@@ -1,10 +1,5 @@
 package schedule
 
-import (
-	"fmt"
-	"io"
-)
-
 // type to distinguish the diff dependency types for edges
 type EdgeKind int
 

@@ -14,31 +14,10 @@ import (
 func main() {
 	// flags for -h and -x
 	helpFlag := flag.Bool("h", false, "prints usage and exits")
-	renamePrintFlag := flag.String("x", "", "scans, parses, renames, prints renamed IR (debug)")
-	dgFlag := flag.String("dg", "", "dump dependence graph for <iloc file> (debug)")
 	flag.Parse()
 
 	if *helpFlag {
 		fmt.Fprint(os.Stdout, usage())
-		return
-	}
-
-	// Debug mode: schedule -x <file>
-	if *renamePrintFlag != "" {
-		err := runRename(*renamePrintFlag)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
-			os.Exit(1)
-		}
-		return
-	}
-
-	// Debug mode: schedule -dg <file>
-	if *dgFlag != "" {
-		if err := runDumpDG(*dgFlag); err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
-			os.Exit(1)
-		}
 		return
 	}
 
@@ -63,7 +42,6 @@ func usage() string {
 	prog := filepath.Base(os.Args[0])
 	return fmt.Sprintf(`Usage:
 	%s -h
-	%s -x <iloc file> 
 	%s <iloc file>
 
 	Flags:
@@ -74,7 +52,7 @@ func usage() string {
 	
 
 	Notes:
-	- These flags are mutually exclusive. They are prioritized in order of -h, -x.
+	- These options are mutually exclusive. 
 	- Non-error output is printed to Stdout. Error messages are pritned to stderror and are formatted as 'ERROR: <line>: <error message>'\n`, prog, prog, prog)
 }
 
