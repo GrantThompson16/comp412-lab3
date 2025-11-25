@@ -67,8 +67,7 @@ func usage() string {
 	%s <iloc file>
 
 	Flags:
-	-h:		  		Prints this help/usage message and exit.
-	-x <file>		(USED FOR DEBUGGING) Scans/parses <file> and build an IR. Renames the Source Registers to Virtual Registers and prints the IR in a readable format.		
+	-h:		  		Prints this help/usage message and exit.	
 	
 	Modes:
 	%s <file>		Scans/parses <file>, renames SRs to VRs, and runs the scheduler on the resulting basic block. The scheduled ILOC is printed to stdout.
@@ -108,20 +107,6 @@ func runSchedule(path string) error {
 	err = schedule.Schedule(irList, os.Stdout)
 	if err != nil {
 		return fmt.Errorf("ERROR: scheduling failed: %w", err)
-	}
-	return nil
-}
-
-func runDumpDG(path string) error {
-	irList, _, err := frontend.ParseFile(path)
-	if err != nil {
-		return fmt.Errorf("ERROR: parse failed for %q: %w", path, err)
-	}
-
-	rename.RenameVirtualRegisters(irList)
-
-	if err := schedule.DumpDG(irList, os.Stdout); err != nil {
-		return fmt.Errorf("ERROR: dumping dependence graph failed: %w", err)
 	}
 	return nil
 }

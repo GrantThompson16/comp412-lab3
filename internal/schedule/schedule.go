@@ -333,12 +333,3 @@ func formatOp(node *ir.IRNode) (string, error) {
 			node.Opcode.String(), node.Line)
 	}
 }
-
-// ===== Debug Helper ==========
-func DumpDG(irList *ir.IR, w io.Writer) error {
-	instrs := buildInstructions(irList)
-	maxVR := irList.MaxVR()
-	g := buildDepGraph(instrs, maxVR)
-	g.ComputePriorities()
-	return g.FprintDOT(w)
-}
